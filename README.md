@@ -148,9 +148,9 @@ all eight metrics, four baselines, and the component ablation.
 
 ## Paper & supplementary
 
-The compiled manuscript is in [`paper/`](paper/). A supplementary document covering
-the full component ablation, the background theory it relies on, and
-reproducibility/scope notes is in [`supplementary/`](supplementary/)
+The paper PDF will be added to [`paper/`](paper/) **after publication**. A supplementary
+document covering the full component ablation, the background theory it relies on, and
+reproducibility/scope notes is already available in [`supplementary/`](supplementary/)
 (`supplementary_material.pdf`, with LaTeX source).
 
 ## Citation

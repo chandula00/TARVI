@@ -138,9 +138,12 @@ substantially improving pseudotime calibration (+126% Spearman over VeloVI). See
 `paper/` and `paper/supplementary_ablation.tex` for the full per-dataset tables,
 all eight metrics, four baselines, and the component ablation.
 
-## Paper
+## Paper & supplementary
 
-The compiled manuscript is in [`paper/`](paper/) as `TARVI_paper.pdf`.
+The compiled manuscript is in [`paper/`](paper/) as `TARVI_paper.pdf`. A
+supplementary document covering the full component ablation, the background theory it
+relies on, and reproducibility/scope notes is in
+[`supplementary/`](supplementary/) (`supplementary_material.pdf`, with LaTeX source).
 
 ## Citation
 

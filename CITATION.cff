@@ -1,0 +1,37 @@
+cff-version: 1.2.0
+message: "If you use TARVI, please cite the following."
+title: "TARVI: Transcription-Factor Aided RNA Velocity Inference"
+abstract: >-
+  A deep generative (VAE) extension of VeloVI with cell-specific TF-regulated
+  transcription rates (ChEA/ENCODE), a supervised residual latent-time head,
+  a velocity-time consistency loss, and velocity-pseudotime blending for
+  calibrated cell-fate trajectories from single-cell RNA sequencing.
+type: software
+license: MIT
+repository-code: "https://github.com/chandula00/TARVI"
+keywords:
+  - rna-velocity
+  - single-cell
+  - scRNA-seq
+  - variational-autoencoder
+  - transcription-factor
+  - pseudotime
+authors:
+  - family-names: Adhikari
+    given-names: Chandula
+  - family-names: Dassanayake
+    given-names: Sandeep
+  - family-names: Herath
+    given-names: Damayanthi
+preferred-citation:
+  type: article
+  title: "TARVI: Transcription-Factor Aided RNA Velocity Inference with Supervised Latent Time and Velocity-Pseudotime Blending"
+  year: 2026
+  notes: "Manuscript under review."
+  authors:
+    - family-names: Adhikari
+      given-names: Chandula
+    - family-names: Dassanayake
+      given-names: Sandeep
+    - family-names: Herath
+      given-names: Damayanthi

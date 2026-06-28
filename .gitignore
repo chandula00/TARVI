@@ -1,0 +1,42 @@
+# ── Python ─────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.ipynb_checkpoints/
+.venv/
+env/
+
+# ── Data (download separately; see README) ─────────────────────────────
+data/
+*.h5ad
+*.loom
+*.csv.gz
+
+# ── Model checkpoints / logs ───────────────────────────────────────────
+*.ckpt
+*.pt
+*.pth
+lightning_logs/
+outputs/
+*.log
+
+# ── LaTeX build artifacts ──────────────────────────────────────────────
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.out
+*.synctex.gz
+*.toc
+*.lof
+*.lot
+
+# ── OS / editor ────────────────────────────────────────────────────────
+.DS_Store
+.idea/
+.vscode/

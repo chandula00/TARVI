@@ -158,28 +158,28 @@ point chosen once on the pooled cross-dataset mean rather than tuned per dataset
 %==============================================================================
 
 Complementing the pancreas case study in the main paper, Figs.~\ref{fig:chromaffin}
-and~\ref{fig:forebrain} show, for every method, the projected velocity streamlines
+and~\ref{fig:forebrain} show, for four methods, the projected velocity streamlines
 (top row) and the inferred latent time (bottom row) on the chromaffin (t-SNE) and
-forebrain (UMAP) datasets; each panel is titled with its method. On both datasets
-TARVI produces coherent streamlines together with a smooth $0\!\to\!1$ latent-time
-gradient, consistent with its temporal-metric lead (chromaffin PT-Spear $0.807$,
-forebrain $0.887$, versus $0.147$ and $0.342$ for VeloVI). VeloVI recovers a similar
-field (chromaffin/forebrain CBDir $0.911$/$0.938$) but an uncalibrated time; TFvelo's
-streamlines are directionally inconsistent (chromaffin CBDir $0.005$); and scVelo
-dynamical and Velocyto give intermediate results.
+forebrain (UMAP) datasets; all panels are rendered identically (shared cluster
+palette) and titled by method. On both datasets TARVI produces coherent streamlines
+together with a smooth $0\!\to\!1$ latent-time gradient, consistent with its
+temporal-metric lead (chromaffin PT-Spear $0.807$, forebrain $0.887$, versus $0.147$
+and $0.342$ for VeloVI). VeloVI recovers a similar field (chromaffin/forebrain CBDir
+$0.911$/$0.938$) but an uncalibrated latent time; scVelo dynamical and Velocyto give
+intermediate results. TFvelo is omitted from these panels as it does not export
+per-cell velocities in a re-loadable form; its quantitative scores are in the main
+paper.
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.19\linewidth]{figures/chromaffin/velocity_stream_TARVI.png}\hfill
-\includegraphics[width=0.19\linewidth]{figures/chromaffin/velocity_stream_VeloVI.png}\hfill
-\includegraphics[width=0.19\linewidth]{figures/chromaffin/velocity_stream_scVelo_dyn.png}\hfill
-\includegraphics[width=0.19\linewidth]{figures/chromaffin/velocity_stream_TFvelo.png}\hfill
-\includegraphics[width=0.19\linewidth]{figures/chromaffin/velocity_stream_velocyto.png}\\[3pt]
-\includegraphics[width=0.19\linewidth]{figures/chromaffin/latent_time_TARVI.png}\hfill
-\includegraphics[width=0.19\linewidth]{figures/chromaffin/latent_time_VeloVI.png}\hfill
-\includegraphics[width=0.19\linewidth]{figures/chromaffin/latent_time_scVelo_dyn.png}\hfill
-\includegraphics[width=0.19\linewidth]{figures/chromaffin/latent_time_TFvelo.png}\hfill
-\includegraphics[width=0.19\linewidth]{figures/chromaffin/latent_time_velocyto.png}
+\includegraphics[width=0.24\linewidth]{figures/chromaffin/velocity_stream_TARVI.png}\hfill
+\includegraphics[width=0.24\linewidth]{figures/chromaffin/velocity_stream_VeloVI.png}\hfill
+\includegraphics[width=0.24\linewidth]{figures/chromaffin/velocity_stream_scVelo_dyn.png}\hfill
+\includegraphics[width=0.24\linewidth]{figures/chromaffin/velocity_stream_velocyto.png}\\[3pt]
+\includegraphics[width=0.24\linewidth]{figures/chromaffin/latent_time_TARVI.png}\hfill
+\includegraphics[width=0.24\linewidth]{figures/chromaffin/latent_time_VeloVI.png}\hfill
+\includegraphics[width=0.24\linewidth]{figures/chromaffin/latent_time_scVelo_dyn.png}\hfill
+\includegraphics[width=0.24\linewidth]{figures/chromaffin/latent_time_velocyto.png}
 \caption{Chromaffin (t-SNE): velocity streamlines (top) and inferred latent time
 (bottom) for each method; panels are titled by method.}
 \label{fig:chromaffin}
@@ -187,16 +187,14 @@ dynamical and Velocyto give intermediate results.
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.19\linewidth]{figures/forebrain/velocity_stream_TARVI.png}\hfill
-\includegraphics[width=0.19\linewidth]{figures/forebrain/velocity_stream_VeloVI.png}\hfill
-\includegraphics[width=0.19\linewidth]{figures/forebrain/velocity_stream_scVelo_dyn.png}\hfill
-\includegraphics[width=0.19\linewidth]{figures/forebrain/velocity_stream_TFvelo.png}\hfill
-\includegraphics[width=0.19\linewidth]{figures/forebrain/velocity_stream_velocyto.png}\\[3pt]
-\includegraphics[width=0.19\linewidth]{figures/forebrain/latent_time_TARVI.png}\hfill
-\includegraphics[width=0.19\linewidth]{figures/forebrain/latent_time_VeloVI.png}\hfill
-\includegraphics[width=0.19\linewidth]{figures/forebrain/latent_time_scVelo_dyn.png}\hfill
-\includegraphics[width=0.19\linewidth]{figures/forebrain/latent_time_TFvelo.png}\hfill
-\includegraphics[width=0.19\linewidth]{figures/forebrain/latent_time_velocyto.png}
+\includegraphics[width=0.24\linewidth]{figures/forebrain/velocity_stream_TARVI.png}\hfill
+\includegraphics[width=0.24\linewidth]{figures/forebrain/velocity_stream_VeloVI.png}\hfill
+\includegraphics[width=0.24\linewidth]{figures/forebrain/velocity_stream_scVelo_dyn.png}\hfill
+\includegraphics[width=0.24\linewidth]{figures/forebrain/velocity_stream_velocyto.png}\\[3pt]
+\includegraphics[width=0.24\linewidth]{figures/forebrain/latent_time_TARVI.png}\hfill
+\includegraphics[width=0.24\linewidth]{figures/forebrain/latent_time_VeloVI.png}\hfill
+\includegraphics[width=0.24\linewidth]{figures/forebrain/latent_time_scVelo_dyn.png}\hfill
+\includegraphics[width=0.24\linewidth]{figures/forebrain/latent_time_velocyto.png}
 \caption{Forebrain (UMAP): velocity streamlines (top) and inferred latent time
 (bottom) for each method; panels are titled by method.}
 \label{fig:forebrain}

@@ -8,6 +8,14 @@ trajectories from scRNA-seq.
 
 ---
 
+<p align="center">
+  <img src="docs/assets/architecture.png" alt="TARVI architecture" width="100%">
+</p>
+
+<p align="center"><em>TARVI architecture — the VeloVI VAE backbone augmented with a
+TF-regulated transcription rate, a supervised residual latent-time head, ODE-aligned
+auxiliary losses, and a velocity–pseudotime blend.</em></p>
+
 ## Overview
 
 RNA velocity infers cellular dynamics from the ratio of unspliced to spliced

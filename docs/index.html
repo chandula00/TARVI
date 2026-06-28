@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TARVI — Transcription-Factor Aided RNA Velocity Inference</title>
-<meta name="description" content="TARVI: a deep generative model for RNA velocity with TF-regulated transcription rates, a supervised latent-time head, and velocity-pseudotime blending.">
+<meta name="description" content="TARVI: a deep generative model for RNA velocity with TF-regulated transcription rates, a supervised latent-time head, velocity-time consistency losses, and velocity-pseudotime blending.">
 <script>
 window.MathJax = {
   tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
@@ -18,12 +18,10 @@ window.MathJax = {
     --accent:#1f4e79; --soft:#f5f7f9; --maxw:880px;
   }
   *{box-sizing:border-box}
-  html{-webkit-text-size-adjust:100%}
-  body{
-    margin:0; color:var(--fg); background:var(--bg);
+  html{-webkit-text-size-adjust:100%; scroll-behavior:smooth}
+  body{margin:0; color:var(--fg); background:var(--bg);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    line-height:1.65; font-size:17px;
-  }
+    line-height:1.65; font-size:17px;}
   .wrap{max-width:var(--maxw); margin:0 auto; padding:0 20px}
   a{color:var(--accent); text-decoration:none}
   a:hover{text-decoration:underline}
@@ -38,22 +36,23 @@ window.MathJax = {
   .badge:hover{border-color:var(--accent); text-decoration:none}
   nav.toc{position:sticky; top:0; background:rgba(255,255,255,.95);
     backdrop-filter:saturate(180%) blur(6px); border-bottom:1px solid var(--line); z-index:5}
-  nav.toc .wrap{display:flex; gap:18px; flex-wrap:wrap; padding:11px 20px; font-size:.9rem}
+  nav.toc .wrap{display:flex; gap:16px; flex-wrap:wrap; padding:11px 20px; font-size:.88rem}
   nav.toc a{color:var(--muted)}
-  section{padding:34px 0; border-bottom:1px solid var(--line)}
+  section{padding:32px 0; border-bottom:1px solid var(--line)}
   h2{font-size:1.32rem; margin:0 0 14px; color:var(--accent)}
-  h3{font-size:1.05rem; margin:24px 0 8px}
+  h3{font-size:1.06rem; margin:22px 0 8px}
   p{margin:0 0 14px}
-  ul{margin:0 0 14px; padding-left:1.2em}
-  li{margin:4px 0}
+  ul,ol{margin:0 0 14px; padding-left:1.2em}
+  li{margin:5px 0}
   figure{margin:18px 0; text-align:center}
   figure img{max-width:100%; height:auto; border-radius:6px}
   figure.narrow img{max-width:460px}
-  figcaption{color:var(--muted); font-size:.88rem; margin-top:8px}
+  figcaption{color:var(--muted); font-size:.88rem; margin-top:8px; text-align:left}
   .table-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:14px 0}
-  table{border-collapse:collapse; width:100%; font-size:.86rem; min-width:520px}
+  table{border-collapse:collapse; width:100%; font-size:.86rem; min-width:560px}
   th,td{padding:7px 9px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap}
   th:first-child,td:first-child{text-align:left; white-space:normal}
+  td.def,th.def{text-align:left; white-space:normal}
   thead th{border-bottom:2px solid #c9ced4; color:var(--fg)}
   tbody tr:hover{background:var(--soft)}
   .best{font-weight:700}
@@ -66,12 +65,16 @@ window.MathJax = {
   .card{border:1px solid var(--line); border-radius:8px; padding:14px 16px; background:#fff}
   .card h4{margin:0 0 6px; font-size:.98rem; color:var(--accent)}
   .card p{margin:0; font-size:.92rem; color:var(--muted)}
+  .figrow{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:10px 0}
+  .figrow img{width:100%; height:auto; border:1px solid var(--line); border-radius:4px}
+  .eqnote{color:var(--muted); font-size:.92rem}
   footer{padding:30px 0 60px; color:var(--muted); font-size:.9rem; text-align:center}
-  @media (max-width:600px){
+  @media (max-width:640px){
     body{font-size:16px}
     header.hero h1{font-size:1.4rem}
-    section{padding:26px 0}
+    section{padding:24px 0}
     th,td{padding:6px 7px}
+    .figrow{grid-template-columns:repeat(2,1fr)}
   }
 </style>
 </head>
@@ -94,11 +97,15 @@ window.MathJax = {
 <nav class="toc">
   <div class="wrap">
     <a href="#abstract">Abstract</a>
+    <a href="#intro">Introduction</a>
+    <a href="#related">Related Work</a>
     <a href="#method">Method</a>
     <a href="#data">Datasets &amp; Metrics</a>
     <a href="#results">Results</a>
     <a href="#ablation">Ablation</a>
+    <a href="#qual">Qualitative</a>
     <a href="#scope">Reproducibility</a>
+    <a href="#conclusion">Conclusion</a>
     <a href="#cite">Cite</a>
   </div>
 </nav>
@@ -126,24 +133,86 @@ window.MathJax = {
   competing methods fail.</p>
 </section>
 
+<section id="intro">
+  <h2>Introduction</h2>
+  <p>Reconstructing cell-fate trajectories from a static snapshot of transcriptomes is a
+  central problem in single-cell biology: cells are destroyed during measurement, so the
+  developmental state of every cell must be inferred from expression alone. RNA velocity
+  reframes this as a local extrapolation problem by jointly counting spliced and
+  unspliced mRNA per gene, yielding a vector field over the cell embedding whose
+  streamlines approximate developmental trajectories without experimental time labels.
+  Its biophysical basis is a system of linear ODEs per gene $g$,</p>
+  $$\frac{du_g}{dt}=\alpha_g(t)-\beta_g u_g,\qquad
+     \frac{ds_g}{dt}=\beta_g u_g-\gamma_g s_g,\qquad
+     v_g=\frac{ds_g}{dt}=\beta_g u_g-\gamma_g s_g,$$
+  <p>with transcription rate $\alpha_g$, splicing rate $\beta_g$, and degradation rate
+  $\gamma_g$. At steady state the on-state satisfies $u_g/s_g=\gamma_g/\beta_g$;
+  deviations indicate active induction or repression.</p>
+  <p>Despite a decade of progress, contemporary estimators still suffer from three
+  structural limitations:</p>
+  <ol>
+    <li>the per-gene transcription rate $\alpha_g$ is a static scalar, ignoring
+      cell-state-dependent regulation by transcription-factor (TF) networks;</li>
+    <li>latent cell time, recovered as a by-product of mixture-state assignment, is
+      weakly supervised and uncalibrated against developmental ordering;</li>
+    <li>locally inferred velocity vectors and globally observed cell trajectories are
+      estimated independently, leading to reversed flows and instability under count
+      splitting.</li>
+  </ol>
+  <p><strong>Contributions.</strong> TARVI explicitly uses TF expression as a mechanistic
+  input to modulate transcription rates, addressing all three gaps jointly:</p>
+  <ul>
+    <li>a masked TF$\to$gene weight matrix (ChEA/ENCODE priors) producing cell-specific
+      $\boldsymbol{\alpha}_i$, jointly optimised end-to-end against the ODE likelihood;</li>
+    <li>a residual latent-time head supervised by a stop-gradient ODE-time signal, with a
+      graph-Laplacian temporal-smoothness regulariser, plus a velocity&ndash;time
+      consistency loss that directly penalises the angle between each cell&rsquo;s velocity
+      and its displacement toward later cells;</li>
+    <li>a velocity&ndash;pseudotime blending step that fuses the supervised time head with
+      velocity-graph diffusion pseudotime for a globally grounded temporal coordinate;</li>
+    <li>evaluation on five biologically diverse datasets against four baselines with eight
+      metrics, where TARVI matches the strongest baseline on cross-boundary direction
+      accuracy while substantially improving pseudotime calibration.</li>
+  </ul>
+</section>
+
+<section id="related">
+  <h2>Related Work</h2>
+  <p><strong>Velocyto</strong> pioneered RNA velocity by fitting a steady-state slope
+  $\gamma_g/\beta_g$ via linear regression on the $u$&ndash;$s$ phase portrait, assuming a
+  single global kinetic regime per gene. <strong>scVelo</strong> resolved this by solving
+  the full two-state (induction/repression) ODE system analytically and inferring cell
+  times via Expectation&ndash;Maximization; however $\alpha_g$ remains a static gene-level
+  constant and the per-gene EM fits scale poorly. <strong>VeloVI</strong> replaced the EM
+  procedure with a variational autoencoder, enabling scalable amortised inference with
+  uncertainty quantification across four kinetic states, but its transcription rates are
+  still single learnable scalars with no regulatory input and its latent time is poorly
+  calibrated. <strong>TFvelo</strong> addressed the regulatory gap by modelling $\alpha_g$
+  as a static linear function of TF expression, improving interpretability, but it is not
+  generative, provides no uncertainty, and produces no latent embedding.</p>
+  <p><strong>DeepVelo</strong> and <strong>scTour</strong> moved beyond closed-form ODEs by
+  learning continuous dynamics with neural ODEs, and the recent <strong>VeloTrace</strong>
+  jointly optimises velocity and trajectory with neural ODEs to close the
+  velocity&ndash;trajectory gap. On the evaluation side, large-scale benchmarks have
+  standardised community metrics (e.g. CBDir, ICCoH), and recent work identifies
+  instabilities such as reversed velocity flows, motivating a supervised, calibrated time
+  head. TARVI targets these limitations within a single probabilistic generative
+  framework: cell-specific TF-regulated $\alpha_g$, a supervised residual time head, and a
+  velocity&ndash;pseudotime blending step.</p>
+</section>
+
 <section id="method">
   <h2>Method</h2>
   <p>TARVI builds on the VeloVI four-state generative backbone (induction,
-  induction-steady, repression, repression-steady) with an amortised variational
-  encoder, and adds four components that target the limitations above. The biophysical
-  basis is the per-gene splicing ODE system</p>
-  $$\frac{du_g}{dt}=\alpha_g(t)-\beta_g u_g,\qquad
-     \frac{ds_g}{dt}=\beta_g u_g-\gamma_g s_g,\qquad
-     v_g=\beta_g u_g-\gamma_g s_g,$$
-  <p>with transcription rate $\alpha_g$, splicing rate $\beta_g$, and degradation rate
-  $\gamma_g$; the RNA velocity is $v_g$.</p>
+  induction-steady, repression, repression-steady) with an amortised variational encoder,
+  and adds four components that target the limitations above.</p>
 
   <figure>
     <img src="assets/architecture.png" alt="TARVI architecture diagram">
-    <figcaption>TARVI architecture. The VeloVI VAE backbone (encoder &rarr; latent
-    &rarr; decoder &rarr; ODE solutions &rarr; four-state mixture) is augmented with a
-    TF-regulated transcription rate, a supervised residual time head, an ODE-residual
-    loss, and a post-hoc velocity&ndash;pseudotime blend.</figcaption>
+    <figcaption>TARVI architecture. The VeloVI VAE backbone (encoder &rarr; latent &rarr;
+    decoder &rarr; ODE solutions &rarr; four-state mixture) is augmented with a TF-regulated
+    transcription rate, a supervised residual time head, an ODE-residual loss, and a
+    post-hoc velocity&ndash;pseudotime blend.</figcaption>
   </figure>
 
   <div class="grid">
@@ -153,79 +222,155 @@ window.MathJax = {
     <div class="card"><h4>2 &middot; Supervised time head</h4><p>A residual MLP on the
       latent code yields a calibrated $t_i\in[0,1]$, supervised by a stop-gradient
       ODE-time signal.</p></div>
-    <div class="card"><h4>3 &middot; Consistency losses</h4><p>A velocity&ndash;time
-      hinge plus a graph-Laplacian temporal-smoothness term keep the field temporally
+    <div class="card"><h4>3 &middot; Consistency losses</h4><p>A velocity&ndash;time hinge
+      plus a graph-Laplacian temporal-smoothness term keep the field temporally
       coherent.</p></div>
     <div class="card"><h4>4 &middot; VPT blending</h4><p>Diffusion pseudotime on the
       velocity graph is blended with the learned time for a globally grounded
       coordinate.</p></div>
   </div>
 
-  <h3>Cell-specific transcription rate</h3>
-  <p>The per-gene constant is replaced by a rate driven by transcription-factor
-  expression through a masked, learnable weight matrix,</p>
+  <h3>Preprocessing</h3>
+  <p>Standard preprocessing uses <code>scv.pp.moments</code> after QC, normalisation
+  ($10^4$ counts/cell), log1p, and top-2000 highly-variable-gene selection (Scanpy/scVelo).
+  TARVI additionally applies (a) per-gene MinMax scaling of <code>Ms</code>/<code>Mu</code>
+  to $[0,1]$, and (b) an $r^2$-based gene filter retaining only genes with positive scVelo
+  $r^2$ and $\gamma>0$.</p>
+
+  <h3>Generative model</h3>
+  <p>For a cell $i$ with scaled spliced/unspliced vectors
+  $\mathbf{s}_i,\mathbf{u}_i\in\mathbb{R}^G$:</p>
+  $$\mathbf{z}_i\sim\mathcal{N}(\mathbf{0},\mathbf{I}_d),\quad
+    (\boldsymbol{\rho}_i,\boldsymbol{\tau}_i,\boldsymbol{\pi}_i)=f_\theta^{\text{dec}}(\mathbf{z}_i),\quad
+    \boldsymbol{\alpha}_i=\mathrm{softplus}\!\big((W\odot M)\,\mathbf{s}^{\text{TF}}_i+\mathbf{b}\big),$$
+  $$(\mathbf{s}_i,\mathbf{u}_i)\sim\textstyle\sum_{k=1}^{4}\pi_{i,g,k}\,
+     \mathcal{N}\!\big(\mu_{i,g,k},\sigma_{g,k}^2\big).$$
+  <p>The encoder $q_\phi$ maps $[\log(\mathbf{s}+0.01)\,\|\,\log(\mathbf{u}+0.01)]$ to
+  $\mathbf{z}_i\in\mathbb{R}^d$ ($d=10$); the decoder produces induction/repression
+  progress $\boldsymbol{\rho}_i,\boldsymbol{\tau}_i\in[0,1]^G$ and mixture weights
+  $\boldsymbol{\pi}_i\in\Delta^3$.</p>
+
+  <h3>Four-state kinetics (closed-form ODE solutions)</h3>
+  <p>The induction branch starts from $u{=}s{=}0$ and evolves over
+  $t_{\text{ind}}=t_s\rho_{i,g}$; the repression branch starts from the induction endpoint
+  $(u_0,s_0)$ and evolves over $t_{\text{rep}}=(t_{\max}-t_s)\tau_{i,g}$:</p>
+  $$u_{\text{ind}}(t)=\tfrac{\alpha}{\beta}\big(1-e^{-\beta t}\big),\quad
+    s_{\text{ind}}(t)=\tfrac{\alpha}{\gamma}\big(1-e^{-\gamma t}\big)
+      +\tfrac{\alpha}{\gamma-\beta}\big(e^{-\gamma t}-e^{-\beta t}\big),$$
+  $$u_{\text{rep}}(t)=u_0\,e^{-\beta t},\quad
+    s_{\text{rep}}(t)=s_0\,e^{-\gamma t}-\tfrac{\beta u_0}{\gamma-\beta}\big(e^{-\gamma t}-e^{-\beta t}\big).$$
+  <p class="eqnote">The induction-steady and repression-steady means are
+  $(\alpha/\beta,\alpha/\gamma)$ and $(0,0)$; all rates are softplus-constrained and clamped
+  to $[0,50]$, with learnable $t_s$ and $t_{\max}=20$. With cell-specific
+  $\boldsymbol{\alpha}_i$ the same closed forms hold, $\alpha$ broadcast across cells.</p>
+
+  <h3>TF-regulated transcription rate</h3>
+  <p>A binary mask $M\in\{0,1\}^{G\times K}$ is derived from ENCODE ChIP-seq peak
+  annotations and ChEA&nbsp;2016 TF&ndash;target associations, retaining the top
+  $K\leq99$ TFs per gene; weights are warm-started as
+  $W^{(0)}_{gk}=0.1\,\rho_S(\mathbf{s}_g,\mathbf{s}_k)$.</p>
   $$\boldsymbol{\alpha}_i=\mathrm{softplus}\!\big((W\odot M)\,\mathbf{s}^{\text{TF}}_i+\mathbf{b}\big),
-     \qquad \boldsymbol{\alpha}_i\in\mathbb{R}^{G}_{>0},$$
-  <p>where $M$ is a binary ENCODE/ChEA TF&ndash;target mask, $W$ the learnable weights,
-  and $\mathbf{b}$ a basal bias warm-started from VeloVI and frozen. Unlike static
-  TF-regression methods, $\boldsymbol{\alpha}_i$ is optimised end-to-end against the ODE
-  likelihood, with an L1 penalty promoting sparsity.</p>
+     \qquad \boldsymbol{\alpha}_i\in\mathbb{R}^{G}_{>0}.$$
+  <p>The bias $\mathbf{b}$ is warm-started from VeloVI&rsquo;s basal
+  $\alpha_{\text{unconstr}}$ (frozen), so the TF module adds an incremental cell-specific
+  signal; an L1 penalty $\lambda_{\text{L1}}\lVert W\rVert_1/(GK)$ promotes sparsity.
+  Unlike TFvelo, $\boldsymbol{\alpha}_i$ is jointly optimised end-to-end against the ODE
+  likelihood. ChEA/ENCODE cover human and mouse, within which the five benchmarks fall.</p>
 
-  <h3>Supervised residual time head</h3>
-  <p>A two-layer residual MLP on the latent code $\mathbf{z}_i$ produces a calibrated
-  time, $t_i=\sigma(W_3\,\mathrm{ReLU}(\mathrm{LN}(\mathbf{h}_1)W_2))$ with
-  $\mathbf{h}_1=\mathrm{ReLU}(W_1\mathbf{z}_i)+W_{\text{skip}}\mathbf{z}_i$, trained by
-  $\mathcal{L}_{\text{time}}=\mathrm{MSE}(t_i,\ \mathrm{sg}(t^{\text{ODE}}_i))$ so it
-  tracks the ODE time without distorting the kinetic parameters.</p>
+  <h3>Residual latent-time head</h3>
+  <p>VeloVI&rsquo;s cell time $t^{\text{ODE}}_i=\mathbb{E}_{k\sim\boldsymbol{\pi}_i}
+  [t_k(\boldsymbol{\rho}_i,\boldsymbol{\tau}_i,t_s)]$ is discontinuous at state boundaries
+  and weakly supervised. TARVI adds a two-layer residual MLP on $\mathbf{z}_i$,</p>
+  $$\mathbf{h}_1=\mathrm{ReLU}(W_1\mathbf{z}_i)+W_{\text{skip}}\mathbf{z}_i,\quad
+    \mathbf{h}_2=\mathrm{ReLU}(\mathrm{LN}(\mathbf{h}_1)W_2),\quad
+    t_i=\sigma(W_3\mathbf{h}_2)\in[0,1],$$
+  <p>with skip connection to stabilise the high-KL phase, supervised by
+  $\mathcal{L}_{\text{time}}=\mathrm{MSE}(t_i,\,\mathrm{sg}(t^{\text{ODE}}_i))$ where
+  $\mathrm{sg}(\cdot)$ is the stop-gradient operator.</p>
 
-  <h3>Velocity&ndash;time consistency</h3>
-  <p>A coherent field should point from earlier to later cells. Over index pairs
-  $(i,j)$ sorted so $t_i\le t_j$,</p>
-  $$\mathcal{L}_{\text{vtc}}=\frac{1}{n_p}\sum_{(i,j)} w_{ij}\,
-     \mathrm{ReLU}\!\big(-\!\cos(\mathbf{v}_i,\ \mathbf{s}_j-\mathbf{s}_i)\big),$$
-  <p>penalising only wrong-pointing velocities. To our knowledge this is the first
-  direct end-to-end pairwise penalty on the angle between velocity and the expression
-  displacement vector.</p>
+  <h3>Training losses</h3>
+  <p>The total objective is</p>
+  $$\mathcal{L}=\mathcal{L}_{\text{recon}}+w_{\text{kl}}\,\mathrm{KL}(\mathbf{z})
+    +\mathrm{KL}_{\text{cpu}}(\boldsymbol{\pi})
+    +\lambda_{\text{time}}\mathcal{L}_{\text{time}}+\lambda_{\text{ode}}\mathcal{L}_{\text{ode-res}}
+    +\lambda_{\text{vtc}}\mathcal{L}_{\text{vtc}}+\lambda_{\text{ts}}\mathcal{L}_{\text{ts}}
+    +\lambda_{\text{L1}}\mathcal{L}_{\text{L1}}.$$
+  <p><strong>ODE-residual loss (scVelo-inspired).</strong> Given $t_i$, the ODE predictions
+  are re-evaluated through a soft gate $g_{ig}=\sigma(5(t_{s,g}-t_i\,t_{\max}))$ that blends
+  the induction and repression branches:</p>
+  $$\hat{u}_{ig}=g_{ig}u_{\text{ind}}(t_i)+(1-g_{ig})u_{\text{rep}}(t_i),\quad
+    \hat{s}_{ig}=g_{ig}s_{\text{ind}}(t_i)+(1-g_{ig})s_{\text{rep}}(t_i),$$
+  $$\mathcal{L}_{\text{ode-res}}=\tfrac12\!\left[\overline{\big((\hat{s}-s)/\bar{s}\big)^2}
+    +\overline{\big((\hat{u}-u)/\bar{u}\big)^2}\right].$$
+  <p><strong>Velocity&ndash;time consistency loss.</strong> For $n_p=\min(B/2,128)$ random
+  pairs $(i,j)$ per minibatch sorted so $t_i\le t_j$:</p>
+  $$\mathcal{L}_{\text{vtc}}=\frac{1}{n_p}\sum_{(i,j)}w_{ij}\,
+    \mathrm{ReLU}\!\big(-\!\cos(\mathbf{v}_i,\mathbf{s}_j-\mathbf{s}_i)\big),\quad
+    w_{ij}=\mathrm{clip}\!\big(\tfrac{t_j-t_i}{\overline{\Delta t}},0,3\big).$$
+  <p>The hinge penalises only wrong-pointing velocities. <strong>Temporal smoothness</strong>
+  is a graph-Laplacian regulariser over in-batch $k$NN pairs in latent space,
+  $\mathcal{L}_{\text{ts}}=\frac{1}{Nk}\sum_i\sum_{j\in\mathcal{N}^z_i}(t_i-t_j)^2$.</p>
+  <p class="eqnote">Default weights: $w_{\text{kl}}{=}1.0$, $\eta_{\text{Dir}}{=}0.25$,
+  $\lambda_{\text{time}}{=}1.0$, $\lambda_{\text{ode}}{=}1.0$, $\lambda_{\text{vtc}}{=}0.2$,
+  $\lambda_{\text{ts}}{=}0.1$, $\lambda_{\text{L1}}{=}0.01$.</p>
 
   <h3>Velocity&ndash;pseudotime blending</h3>
-  <p>After training, scVelo diffusion pseudotime $t^{\text{VPT}}$ on the velocity
-  transition graph is convex-blended with the (sign-aligned) learned time,</p>
-  $$t^{\star}_i=\beta\,t^{\text{VPT}}_i+(1-\beta)\,t^{\text{head}}_i,\qquad \beta=0.7,$$
-  <p>fusing a globally grounded topology signal with the locally calibrated time. The
-  blend is a post-hoc step that does not alter the velocity field.</p>
+  <p>After training, scVelo diffusion pseudotime is run on the velocity transition graph to
+  obtain $t^{\text{VPT}}_i\in[0,1]$. The learned time is sign-aligned to $t^{\text{VPT}}$ by
+  Spearman correlation ($t^{\text{head}}\leftarrow 1-t^{\text{head}}$ if
+  $\rho_S(t^{\text{head}},t^{\text{VPT}})<0$) and convex-blended:</p>
+  $$t^{\star}_i=\beta\,t^{\text{VPT}}_i+(1-\beta)\,t^{\text{head}}_i,\qquad \beta=0.7.$$
+  <p>$\beta=0.7$ was selected once by grid search over $\{0,0.2,\dots,1.0\}$ on the pooled
+  cross-dataset mean and held fixed for all five datasets; performance is stable across
+  $\beta\in[0.5,0.9]$.</p>
+
+  <h3>Training procedure</h3>
+  <p>TARVI is trained with AdamW ($\eta_0=10^{-2}$, weight decay $10^{-2}$, gradient clip
+  norm 10) for up to 500 epochs with early stopping on a 10% validation holdout (batch 256,
+  or $\max(32,N/4)$ for small datasets). The VeloVI KL weight ramp is preserved; all
+  auxiliary losses are active from epoch&nbsp;0.</p>
 </section>
 
 <section id="data">
   <h2>Datasets &amp; Metrics</h2>
   <p>TARVI and all four baselines (Velocyto, scVelo dynamical, VeloVI, TFvelo) are
-  benchmarked across five biologically diverse datasets under identical preprocessing
-  and evaluation.</p>
+  benchmarked across five biologically diverse datasets under identical preprocessing and
+  evaluation.</p>
   <div class="table-wrap">
   <table>
-    <thead><tr><th>Dataset</th><th style="text-align:left">Biology</th><th style="text-align:left">Source</th></tr></thead>
+    <thead><tr><th>Dataset</th><th class="def">Biology</th><th class="def">Source</th></tr></thead>
     <tbody>
-      <tr><td>Pancreas</td><td style="text-align:left">Pancreatic endocrinogenesis</td><td style="text-align:left">Bastidas-Ponce et al.</td></tr>
-      <tr><td>Bone marrow</td><td style="text-align:left">Haematopoiesis</td><td style="text-align:left">Setty et al.</td></tr>
-      <tr><td>Forebrain</td><td style="text-align:left">Neuronal lineages</td><td style="text-align:left">La Manno et al.</td></tr>
-      <tr><td>Chromaffin</td><td style="text-align:left">Sympathetic nervous system</td><td style="text-align:left">Furlan et al.</td></tr>
-      <tr><td>scEU organoid</td><td style="text-align:left">Metabolic labelling</td><td style="text-align:left">dynamo</td></tr>
+      <tr><td>Pancreas</td><td class="def">Pancreatic endocrinogenesis</td><td class="def">Bastidas-Ponce et al.</td></tr>
+      <tr><td>Bone marrow</td><td class="def">Haematopoiesis</td><td class="def">Setty et al.</td></tr>
+      <tr><td>Forebrain</td><td class="def">Neuronal lineages</td><td class="def">La Manno et al.</td></tr>
+      <tr><td>Chromaffin</td><td class="def">Sympathetic nervous system</td><td class="def">Furlan et al.</td></tr>
+      <tr><td>scEU organoid</td><td class="def">Metabolic labelling</td><td class="def">dynamo</td></tr>
     </tbody>
   </table>
   </div>
-  <p>Eight metrics span four axes: directional correctness (<strong>ICCoH</strong>,
-  <strong>CBDir</strong>), local field consistency (<strong>VelConf</strong>), global
-  temporal ordering (<strong>PT-Spear</strong>, <strong>PT-DistCorr</strong>,
-  <strong>PT-Cons</strong>), root/terminal identification (<strong>RootAcc</strong>),
-  and per-gene kinetic fit (<strong>Gene-R²<sub>spl</sub></strong>). All are oriented so
-  higher is better.</p>
+  <p>Eight metrics (all oriented so higher is better) span four axes:</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Metric</th><th class="def">Definition</th></tr></thead>
+    <tbody>
+      <tr><td>ICCoH</td><td class="def">Mean cosine similarity of each cell&rsquo;s unit velocity to its cluster-mean direction; within-cluster directional agreement.</td></tr>
+      <tr><td>CBDir</td><td class="def">Cosine similarity between a cell&rsquo;s velocity and the mean velocity of its neighbours from the next developmental cluster; directional correctness at fate boundaries.</td></tr>
+      <tr><td>VelConf</td><td class="def">Per-cell mean cosine similarity to $k$NN velocities; local field consistency.</td></tr>
+      <tr><td>PT-Spear</td><td class="def">Spearman rank correlation of inferred pseudotime vs.&nbsp;geodesic UMAP distance from the root; global temporal ordering.</td></tr>
+      <tr><td>PT-DistCorr</td><td class="def">Pearson correlation of pseudotime vs.&nbsp;pairwise UMAP distances; linear distance structure.</td></tr>
+      <tr><td>PT-Cons</td><td class="def">Fraction of $k$NN pairs whose pseudotime difference lies within 10% of $\Delta t$; local temporal smoothness.</td></tr>
+      <tr><td>RootAcc</td><td class="def">Fraction of inferred root/terminal cells (from the velocity transition graph) matching annotated progenitor/mature populations.</td></tr>
+      <tr><td>Gene-R²<sub>spl</sub></td><td class="def">Coefficient of determination between ODE-predicted and observed spliced counts; per-gene kinetic fit (TARVI and VeloVI only).</td></tr>
+    </tbody>
+  </table>
+  </div>
 </section>
 
 <section id="results">
   <h2>Results</h2>
-  <p>Across the five datasets, TARVI is <strong>on par with the strongest baseline on
-  the directional metrics</strong> and <strong>clearly leads on every temporal
-  metric</strong>, while also achieving the best mean kinetic fit among methods that
-  report it.</p>
+  <p>Across the five datasets, TARVI is <strong>on par with the strongest baseline on the
+  directional metrics</strong> and <strong>clearly leads on every temporal metric</strong>,
+  while also achieving the best mean kinetic fit among methods that report it.</p>
 
   <h3>Cross-dataset means</h3>
   <div class="table-wrap">
@@ -253,14 +398,17 @@ window.MathJax = {
   <div class="callout">
     <strong>Key observations.</strong>
     <ul>
-      <li><strong>Temporal calibration is the headline win:</strong> PT-Spear improves
-        by 126% over VeloVI (0.747 vs.&nbsp;0.331), with PT-DistCorr and PT-Cons also
-        clearly top.</li>
+      <li><strong>Temporal calibration is the headline win:</strong> PT-Spear improves by
+        126% over VeloVI (0.747 vs.&nbsp;0.331), with PT-DistCorr and PT-Cons also clearly
+        top.</li>
       <li><strong>Directional metrics are comparable, not a clear win:</strong> CBDir
-        0.933 vs.&nbsp;0.931 and VelConf 0.927 vs.&nbsp;0.920 are within run-to-run
-        drift and should be read as on par with VeloVI.</li>
-      <li><strong>TFvelo&rsquo;s ICCoH lead collapses at CBDir</strong> (0.569):
-        static TF regression is internally consistent but directionally incorrect.</li>
+        0.933 vs.&nbsp;0.931 and VelConf 0.927 vs.&nbsp;0.920 are within run-to-run drift,
+        so TARVI is on par with VeloVI here.</li>
+      <li><strong>TFvelo&rsquo;s ICCoH lead collapses at CBDir</strong> (0.569): static TF
+        regression is internally consistent but directionally incorrect.</li>
+      <li><strong>scVelo dynamical&rsquo;s</strong> three cosine metrics are undefined
+        because its per-gene EM yields NaN velocities for non-converging genes; its
+        pseudotime metrics remain valid.</li>
       <li><strong>RootAcc is the weakest axis,</strong> driven almost entirely by bone
         marrow, where the post-hoc root/terminal extraction is brittle on
         haematopoiesis&rsquo;s multifurcating topology.</li>
@@ -307,30 +455,30 @@ window.MathJax = {
     </tbody>
   </table>
   </div>
-  <figcaption style="text-align:left">Best value in each dataset/metric block in bold;
-  &ldquo;&mdash;&rdquo; marks undefined or non-applicable entries (scVelo dynamical&rsquo;s
-  cosine metrics are undefined where per-gene EM yields NaN velocities;
-  Gene-R²<sub>spl</sub> applies only to TARVI and VeloVI).</figcaption>
+  <figcaption>Best value in each dataset/metric block in bold; &ldquo;&mdash;&rdquo; marks
+  undefined/non-applicable entries.</figcaption>
 
   <h3>Qualitative case study: pancreas</h3>
   <p>On the pancreatic endocrinogenesis benchmark (Ductal &rarr; Ngn3 low/high &rarr;
-  Alpha/Beta/Delta/Epsilon), TARVI produces clean directional flow from Ductal through
-  the Ngn3 intermediates to all four mature populations, and a smooth $0\!\to\!1$ latent
-  time (Ductal $\approx 0$, mature $\approx 1$). VeloVI recovers the same topology but
-  with spurious streamlines near Ductal and an uncalibrated time range; scVelo dynamical
-  shows circular artefacts at the kinetic switch; TFvelo&rsquo;s time gradient is
-  reversed (mature earlier than progenitor), mirroring its RootAcc collapse to 0.531;
-  and Velocyto is correctly oriented but with weaker cluster separation. The full
-  streamline and latent-time panels are in the
+  Alpha/Beta/Delta/Epsilon), TARVI produces clean directional flow from Ductal through the
+  Ngn3 intermediates to all four mature populations, and a smooth $0\!\to\!1$ latent time
+  (Ductal $\approx 0$, mature $\approx 1$). VeloVI recovers the same topology but with
+  spurious streamlines near Ductal and an uncalibrated time range
+  (${\sim}[2.4,3.4]$); scVelo dynamical shows circular artefacts at the kinetic switch;
+  TFvelo&rsquo;s time gradient is reversed (mature earlier than progenitor), mirroring its
+  RootAcc collapse to 0.531; and Velocyto is correctly oriented but with weaker cluster
+  separation. The full streamline and latent-time panels are in the
   <a href="https://github.com/chandula00/TARVI/blob/main/paper/TARVI__Transcription_Factor_Aided_RNA_Velocity_Inference.pdf">paper</a>.</p>
 </section>
 
 <section id="ablation">
   <h2>Component Ablation</h2>
   <p>To attribute performance to each component we ablate the TF rate, the
-  velocity&ndash;time consistency loss (VTC), and the velocity&ndash;pseudotime blend
-  (VPT) across all five datasets, and also apply the blend to the <em>unmodified</em>
-  VeloVI graph. The full study is in the
+  velocity&ndash;time consistency loss (VTC), and the velocity-pseudotime blend (VPT) across
+  all five datasets, and also apply the blend to the <em>unmodified</em> VeloVI graph. We
+  write $\Delta_c\,m=m(\text{TARVI})-m(\text{TARVI}\!-\!c)$ for the marginal contribution of
+  component $c$, and $\delta_{\text{VPT}}\,m=m(\text{VeloVI}\!+\!\text{VPT})-m(\text{VeloVI})$
+  for the blend on the raw VeloVI graph. The full study is in the
   <a href="https://github.com/chandula00/TARVI/blob/main/supplementary/supplementary_material.pdf">supplementary material</a>.</p>
   <div class="table-wrap">
   <table>
@@ -348,32 +496,99 @@ window.MathJax = {
     </tbody>
   </table>
   </div>
-  <p>The components act on different axes. The <strong>blend supplies the pseudotime
-  ordering</strong> ($\Delta_{\text{VPT}}$ PT-Spear $=0.747-0.320=0.427$) and leaves the
-  velocity field unchanged; its effect is largely model-agnostic, lifting the raw VeloVI
-  graph from 0.331 to 0.714. The <strong>TF rate sharpens the velocity field</strong>
-  (ICCoH $+0.083$, VelConf $+0.025$, CBDir $+0.022$) with a modest kinetic-fit gain, and
-  the <strong>VTC loss improves temporal ordering and root identification</strong>
-  (RootAcc $+0.115$). The blend weight $\beta=0.7$ sits between the ablation endpoints
-  ($\beta=0$ &harr; TARVI&minus;VPT; $\beta=1$ &harr; VeloVI+VPT) and exceeds both,
-  confirming the two temporal signals are complementary.</p>
+  <ul>
+    <li><strong>VPT blending drives the pseudotime ordering:</strong>
+      $\Delta_{\text{VPT}}(\text{PT-Spear})=0.747-0.320=0.427$, with every velocity-field
+      metric unchanged between full and $-$VPT (the blend is post-hoc). It is largely
+      model-agnostic: on the raw VeloVI graph
+      $\delta_{\text{VPT}}(\text{PT-Spear})=0.383$; the residual $+0.033$ is what
+      TARVI&rsquo;s own velocity field adds.</li>
+    <li><strong>The TF rate sharpens the velocity field:</strong> $\Delta_{\text{TF}}$ is
+      positive on ICCoH ($+0.083$), VelConf ($+0.025$), CBDir ($+0.022$) and
+      Gene-R²<sub>spl</sub> ($+0.018$), but not on pseudotime &mdash; a biologically
+      grounded regulariser that improves field consistency more than $R^2$.</li>
+    <li><strong>The VTC loss improves temporal ordering and root identification:</strong>
+      $\Delta_{\text{VTC}}(\text{PT-Spear})=0.047$ and
+      $\Delta_{\text{VTC}}(\text{RootAcc})=0.115$, with negligible field effect.</li>
+    <li><strong>The blend weight is robust:</strong> $\beta{=}0$ (time-head only) and
+      $\beta{=}1$ (pure VPT) are the ablation endpoints, and the global $\beta{=}0.7$
+      exceeds both &mdash; the two temporal signals are complementary.</li>
+  </ul>
+  <p class="eqnote">The velocity-graph pseudotime itself is built from a transition kernel
+  $\pi_{ij}\propto\exp(\cos(\mathbf{v}_i,\mathbf{s}_j-\mathbf{s}_i)/\sigma)$ over $k$NN
+  neighbours, followed by diffusion pseudotime from a root cell &mdash; a post-hoc step that
+  does not modify the velocity field.</p>
+</section>
+
+<section id="qual">
+  <h2>Qualitative Comparison: Chromaffin &amp; Forebrain</h2>
+  <p>Extending the pancreas case study, the figures below show velocity streamlines (top)
+  and inferred latent time (bottom) for four methods, all rendered identically with a shared
+  cluster palette. On both datasets TARVI gives coherent streamlines and a smooth
+  $0\!\to\!1$ latent-time gradient, consistent with its temporal lead (chromaffin PT-Spear
+  0.807, forebrain 0.887, vs.&nbsp;0.147 and 0.342 for VeloVI). TFvelo is omitted as it
+  exports no re-loadable per-cell velocities.</p>
+
+  <h3>Chromaffin (t-SNE)</h3>
+  <div class="figrow">
+    <img src="assets/qual/chromaffin/velocity_stream_TARVI.png" alt="chromaffin streamlines TARVI">
+    <img src="assets/qual/chromaffin/velocity_stream_VeloVI.png" alt="chromaffin streamlines VeloVI">
+    <img src="assets/qual/chromaffin/velocity_stream_scVelo_dyn.png" alt="chromaffin streamlines scVelo">
+    <img src="assets/qual/chromaffin/velocity_stream_velocyto.png" alt="chromaffin streamlines Velocyto">
+  </div>
+  <div class="figrow">
+    <img src="assets/qual/chromaffin/latent_time_TARVI.png" alt="chromaffin latent TARVI">
+    <img src="assets/qual/chromaffin/latent_time_VeloVI.png" alt="chromaffin latent VeloVI">
+    <img src="assets/qual/chromaffin/latent_time_scVelo_dyn.png" alt="chromaffin latent scVelo">
+    <img src="assets/qual/chromaffin/latent_time_velocyto.png" alt="chromaffin latent Velocyto">
+  </div>
+  <figcaption>Chromaffin: velocity streamlines (top) and latent time (bottom) for TARVI,
+  VeloVI, scVelo dynamical, and Velocyto.</figcaption>
+
+  <h3>Forebrain (UMAP)</h3>
+  <div class="figrow">
+    <img src="assets/qual/forebrain/velocity_stream_TARVI.png" alt="forebrain streamlines TARVI">
+    <img src="assets/qual/forebrain/velocity_stream_VeloVI.png" alt="forebrain streamlines VeloVI">
+    <img src="assets/qual/forebrain/velocity_stream_scVelo_dyn.png" alt="forebrain streamlines scVelo">
+    <img src="assets/qual/forebrain/velocity_stream_velocyto.png" alt="forebrain streamlines Velocyto">
+  </div>
+  <div class="figrow">
+    <img src="assets/qual/forebrain/latent_time_TARVI.png" alt="forebrain latent TARVI">
+    <img src="assets/qual/forebrain/latent_time_VeloVI.png" alt="forebrain latent VeloVI">
+    <img src="assets/qual/forebrain/latent_time_scVelo_dyn.png" alt="forebrain latent scVelo">
+    <img src="assets/qual/forebrain/latent_time_velocyto.png" alt="forebrain latent Velocyto">
+  </div>
+  <figcaption>Forebrain: velocity streamlines (top) and latent time (bottom) for TARVI,
+  VeloVI, scVelo dynamical, and Velocyto.</figcaption>
 </section>
 
 <section id="scope">
   <h2>Reproducibility &amp; Scope</h2>
-  <p>All results use a fixed random seed and a deterministic preprocessing pipeline, and
-  we report single-run point estimates. Run-to-run drift on the aggregate means is
-  $\le 0.01$, which is the right scale for reading small differences: gaps on that order
-  (the directional metrics) are ties, whereas the pseudotime contributions are an order
-  of magnitude larger.</p>
+  <p>All results use a fixed random seed and a deterministic preprocessing pipeline, and we
+  report single-run point estimates. Run-to-run drift on the aggregate means is $\le 0.01$,
+  which is the right scale for reading small differences: gaps on that order (the directional
+  metrics) are ties, whereas the pseudotime contributions are an order of magnitude
+  larger.</p>
   <p>A few limitations bound these conclusions. We did not run a multi-seed study, so we
-  report no confidence intervals or paired significance tests. The TF prior is rebuilt
-  per dataset from the (incomplete, tissue-context-dependent) ENCODE/ChEA databases;
-  genes lacking reliable TF edges fall back to VeloVI-like behaviour, so outside the
-  ENCODE/ChEA scope we expect TARVI to approach the no-TF regime rather than to fail.
-  Finally, VeloTrace &mdash; a concurrent method targeting the same gap &mdash; has no
-  public code release that would allow a faithful re-implementation under our protocol,
-  so it could not be included among the baselines.</p>
+  report no confidence intervals or paired significance tests. The TF prior is rebuilt per
+  dataset from the (incomplete, tissue-context-dependent) ENCODE/ChEA databases; genes
+  lacking reliable TF edges fall back to VeloVI-like behaviour, so outside the ENCODE/ChEA
+  scope we expect TARVI to approach the no-TF regime rather than to fail. RootAcc is brittle
+  on multifurcating topologies (bone marrow); macrostate-based terminal detection is a clear
+  next step. Finally, VeloTrace &mdash; a concurrent method targeting the same gap &mdash; has
+  no public code release that would allow a faithful re-implementation under our protocol, so
+  it could not be included among the baselines.</p>
+</section>
+
+<section id="conclusion">
+  <h2>Conclusion</h2>
+  <p>TARVI is a principled, modular deep generative model for RNA velocity that integrates
+  transcription-factor regulation, a supervised residual time head, ODE-aligned auxiliary
+  losses, and velocity&ndash;pseudotime blending into a single variational framework. Across
+  five biologically diverse datasets and four baseline methods, it matches the strongest
+  baseline on cross-boundary direction accuracy and leads on pseudotime quality, with a 126%
+  improvement in Spearman pseudotime correlation over VeloVI. The implementation, benchmark
+  harness, and evaluation suite are available in the repository.</p>
 </section>
 
 <section id="cite">
@@ -384,6 +599,18 @@ window.MathJax = {
   author    = {Adhikari, Chandula and Dassanayake, Sandeep and Herath, Damayanthi},
   year      = {2026}
 }</code></pre>
+  <h3>Key references</h3>
+  <ul>
+    <li>La Manno et al. (2018) — RNA velocity of single cells (Velocyto).</li>
+    <li>Bergen et al. (2020) — Generalizing RNA velocity to transient cell states (scVelo).</li>
+    <li>Gayoso et al. (2024) — Deep generative modeling of transcriptional dynamics (VeloVI).</li>
+    <li>Li et al. (2024) — TFvelo: gene-regulation modeling of RNA velocity.</li>
+    <li>Cheng et al. (2026) — VeloTrace: reconciling velocity and trajectory with neural ODEs.</li>
+    <li>Haghverdi et al. (2016) — Diffusion pseudotime.</li>
+    <li>Liu et al. (2026) — Comprehensive benchmarking of RNA velocity methods.</li>
+    <li>Saelens et al. (2019) — A comparison of single-cell trajectory inference methods.</li>
+  </ul>
+  <p class="eqnote">See the <a href="https://github.com/chandula00/TARVI/blob/main/paper/TARVI__Transcription_Factor_Aided_RNA_Velocity_Inference.pdf">paper</a> for the complete bibliography.</p>
 </section>
 
 </main>

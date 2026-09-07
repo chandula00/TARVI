@@ -113,6 +113,7 @@ window.MathJax = {
   figure{margin:18px 0; text-align:center}
   figure img{max-width:100%; height:auto; border-radius:6px}
   figure.narrow img{max-width:460px}
+  figure.mid img{max-width:640px}
   figcaption{color:var(--muted); font-size:.88rem; margin-top:8px; text-align:left}
   .table-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:14px 0}
   table{border-collapse:collapse; width:100%; font-size:.86rem; min-width:560px}
@@ -230,13 +231,14 @@ window.MathJax = {
   <p>The trick rests on a detail of how cells make RNA. A gene is first transcribed into
   <em>unspliced</em> pre-mRNA; introns are then spliced out to give mature <em>spliced</em>
   mRNA, which is eventually degraded:</p>
-  <div class="callout">
-    <p style="margin:0"><strong>gene &nbsp;&mdash;&alpha;&rarr;&nbsp; unspliced&nbsp;(<em>u</em>)
-    &nbsp;&mdash;&beta;&rarr;&nbsp; spliced&nbsp;(<em>s</em>) &nbsp;&mdash;&gamma;&rarr;&nbsp;
-    degraded</strong><br>
-    <span class="eqnote">&alpha; = transcription rate &middot; &beta; = splicing rate &middot;
-    &gamma; = degradation rate</span></p>
-  </div>
+
+  <figure>
+    <img src="assets/slides/central_dogma.png" alt="Central dogma: DNA transcribed to unspliced RNA at rate alpha, spliced to mature RNA at rate beta, degraded at rate gamma, with the two governing ODEs" loading="lazy" decoding="async">
+    <figcaption>The three-step pipeline and the two ODEs that govern it. $\alpha$ is the
+    transcription rate, $\beta$ the splicing rate, $\gamma$ the degradation rate.
+    <strong>Velocity is the boxed quantity</strong> &mdash; the rate of change of the spliced
+    pool.</figcaption>
+  </figure>
   <p>Modern droplet protocols count the two pools separately. Because unspliced RNA has to
   become spliced RNA, the unspliced pool is a <strong>leading indicator</strong>: a gene
   switching on shows a spike of unspliced RNA before its spliced count catches up. Velocity is
@@ -246,22 +248,18 @@ window.MathJax = {
   future.</p>
 
   <h3>A concrete example</h3>
-  <p>Suppose we measure two genes in Cell&nbsp;1 and also estimate their velocities:</p>
-  <div class="table-wrap">
-    <table class="narrow">
-      <thead><tr><th>&nbsp;</th><th>Gene 1</th><th>Gene 2</th></tr></thead>
-      <tbody>
-        <tr><td>Cell 1 &mdash; measured count</td><td>20</td><td>30</td></tr>
-        <tr><td>Cell 1 &mdash; velocity</td><td>+3</td><td>&minus;2</td></tr>
-        <tr><td><strong>Cell 1 &mdash; extrapolated future</strong></td><td><strong>23</strong></td><td><strong>28</strong></td></tr>
-        <tr><td>Cell 2 &mdash; measured count</td><td>23</td><td>28</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <p>Cell&nbsp;1's extrapolated future <em>is</em> Cell&nbsp;2's present. We have just learned
-  that Cell&nbsp;1 is heading toward the state Cell&nbsp;2 occupies &mdash; a direction of
-  development, from a snapshot, with no time-course experiment. Repeat across every cell and
-  the arrows knit together into a differentiation trajectory.</p>
+
+  <figure>
+    <img src="assets/slides/velocity_example.png" alt="Two-gene example: Cell 1 with counts 20 and 30 and velocities +3 and -2 extrapolates to 23 and 28, which is exactly Cell 2's measured profile" loading="lazy" decoding="async">
+    <figcaption>Cell&nbsp;1 is measured at 20 and 30 counts for two genes, with velocities
+    $+3$ and $-2$. Extrapolating gives 23 and 28 &mdash; which is exactly Cell&nbsp;2's
+    measured profile. <strong>Cell&nbsp;1's future <em>is</em> Cell&nbsp;2's present.</strong>
+    We have recovered a direction of development from a snapshot, with no time-course
+    experiment.</figcaption>
+  </figure>
+
+  <p>Repeat that across every cell and the arrows knit together into a differentiation
+  trajectory over the whole embedding.</p>
 </section>
 
 <section id="problem">
@@ -461,8 +459,17 @@ adata.obsm["X_tarvi"]     = model.get_latent_representation()</code></pre>
   <p>The <em>phase portrait</em> is the scatter of $(s,u)$ across all cells for one gene. During
   induction $u$ rises first and $s$ lags, producing an upper-left arm; during repression $u$
   falls first and $s$ lags again, producing a lower-right arm. Together they trace a
-  counter-clockwise loop whose steady-state diagonal has slope $\gamma/\beta$. This geometry is
-  the <em>sole</em> source of information about the kinetic rates.</p>
+  counter-clockwise loop whose steady-state diagonal has slope $\gamma/\beta$.</p>
+
+  <figure class="mid">
+    <img src="assets/slides/phase_portrait.png" alt="Phase portrait: a counter-clockwise loop in spliced-unspliced space, induction arm above the dashed steady-state diagonal of slope gamma over beta, repression arm below, meeting at the switch point" loading="lazy" decoding="async">
+    <figcaption>One gene's trajectory drawn as $(s,u)$ &mdash; what a scatter over cells
+    reveals. The lag turns the path into a counter-clockwise loop: the induction arm sits above
+    the steady-state diagonal, the repression arm below. <strong>This geometry is the
+    <em>sole</em> source of information about the kinetic rates</strong> &mdash; the dashed
+    diagonal's slope is $\gamma/\beta$, and the loop's width encodes how far apart $\beta$ and
+    $\gamma$ are.</figcaption>
+  </figure>
 
   <h3>A removable singularity at $\gamma=\beta$</h3>
   <p>Both expressions for $s$ divide by $(\gamma-\beta)$, which is unstable when a gene has
@@ -749,6 +756,15 @@ px_pi       = Dirichlet(px_pi_alpha).rsample()                    # what is used
 <section id="tf">
   <h2>5 &middot; Contribution 1 &mdash; TF-regulated transcription</h2>
 
+  <figure>
+    <img src="assets/slides/tf_module.png" alt="TF module: transcription factor expression multiplied by a masked learnable weight matrix W elementwise M, masked by ChEA/ENCODE priors, producing a cell-specific transcription rate alpha_i" loading="lazy" decoding="async">
+    <figcaption>The TF module. A binary mask $M$ from ChEA/ENCODE ChIP-seq evidence (top
+    $K\le99$ TFs per gene) gates a learnable weight matrix $W$; each cell's own
+    transcription-factor expression is read through it to give a cell-specific rate
+    $\alpha_i$. Unlike TFvelo, the whole module is optimised end-to-end against the ODE
+    likelihood.</figcaption>
+  </figure>
+
   <h3>Building the prior</h3>
   <p>A binary mask of known regulatory relationships is assembled from ENCODE ChIP-seq and ChEA
   2016. TF&ndash;target pairs are parsed from both sources, gene names resolved case-insensitively
@@ -848,6 +864,14 @@ px_pi       = Dirichlet(px_pi_alpha).rsample()                    # what is used
   $$h_1=\mathrm{ReLU}(W_1z)+W_{\text{skip}}z,\qquad
     h_2=\mathrm{ReLU}\big(W_2\,\mathrm{LN}(h_1)\big),\qquad
     t_i=\sigma(W_3h_2)\in[0,1].$$
+
+  <figure>
+    <img src="assets/slides/time_head.png" alt="The residual time head: latent vector z passes through a two-layer MLP with a skip connection bypassing it, summed to give t_i in [0,1], supervised against the ODE time through a stop-gradient" loading="lazy" decoding="async">
+    <figcaption>The time head. The latent vector takes two routes &mdash; through the
+    nonlinearity, and around it via the skip connection &mdash; which are summed to give
+    $t_i\in[0,1]$. The supervising ODE time passes through a <strong>stop-gradient</strong>, so
+    the head moves toward the ODE branch but never the reverse.</figcaption>
+  </figure>
 
   <h3>Why the input is $z$</h3>
   <p>Latent time must be one number per cell, and the only cell-indexed, gene-free representation
@@ -1064,6 +1088,16 @@ with torch.no_grad():
   actually being compared.</em></p>
 
   <h3>Geometric regularisers</h3>
+
+  <figure>
+    <img src="assets/slides/regularisers.png" alt="Two geometric regularisers: temporal smoothness pulls kNN neighbours in latent space toward similar times; velocity-time consistency is a spring-loaded hinge penalising velocity arrows that point backwards in time" loading="lazy" decoding="async">
+    <figcaption>Two structural priors. <strong>Left:</strong> temporal smoothness &mdash; cells
+    that look alike (kNN in latent space, $k=10$) should sit at similar points in the
+    trajectory. <strong>Right:</strong> velocity&ndash;time consistency &mdash; a pairwise
+    ReLU-cosine hinge that penalises arrows running backwards in time, and leaves
+    correctly-aligned pairs untouched.</figcaption>
+  </figure>
+
   <p>The <strong>velocity&ndash;time consistency loss</strong> samples $n_p=\min(B/2,128)$ random
   cell pairs per minibatch, orders them so $t_i\le t_j$, and penalises velocity that points
   backwards:</p>
@@ -1150,6 +1184,15 @@ with torch.no_grad():
 
 <section id="vpt">
   <h2>9 &middot; Contribution 3 &mdash; velocity&ndash;pseudotime blending</h2>
+
+  <figure>
+    <img src="assets/slides/vpt_blend.png" alt="Velocity-pseudotime blending: the local time head and global diffusion pseudotime feed a convex blend with beta = 0.7, producing the final temporal coordinate" loading="lazy" decoding="async">
+    <figcaption>Two complementary signals, one coordinate. The <strong>time head</strong> is
+    locally precise but has no topological anchor; <strong>diffusion pseudotime</strong> on the
+    velocity graph is globally sound but messy near boundaries. After sign-alignment by
+    Spearman correlation they are convex-blended at $\beta=0.7$.</figcaption>
+  </figure>
+
   <p>Velocity pseudotime is a cell ordering derived from the velocity field itself, computed after
   training as post-processing, in four steps.</p>
 
@@ -1289,7 +1332,7 @@ with torch.no_grad():
   </div>
 
   <figure class="narrow">
-    <img src="assets/radar.png" alt="Cross-dataset performance radar">
+    <img src="assets/radar.png" alt="Cross-dataset performance radar" loading="lazy" decoding="async">
     <figcaption>Cross-dataset mean performance (5 datasets). Each axis is one metric on $[0,1]$;
     larger area is better.</figcaption>
   </figure>
@@ -1359,6 +1402,16 @@ with torch.no_grad():
   undefined/non-applicable entries.</figcaption>
 
   <h3>Qualitative case study: pancreas</h3>
+
+  <figure>
+    <img src="assets/slides/pancreas_qual.png" alt="TARVI on the pancreas benchmark: left, velocity streamlines flowing from Ductal through Ngn3 intermediates to Alpha, Beta, Delta and Epsilon; right, latent time as a smooth 0 to 1 gradient across the same embedding" loading="lazy" decoding="async">
+    <figcaption>TARVI on pancreatic endocrinogenesis. <strong>Left:</strong> velocity
+    streamlines give continuous directional flow from Ductal (red) through the Ngn3
+    intermediates to all four mature populations. <strong>Right:</strong> the blended latent
+    time is a smooth $0\!\to\!1$ gradient over the same embedding &mdash; progenitors dark,
+    mature cells bright &mdash; with no plateaus or reversals.</figcaption>
+  </figure>
+
   <p>On the pancreatic endocrinogenesis benchmark (Ductal &rarr; Ngn3 low/high &rarr;
   Alpha/Beta/Delta/Epsilon), TARVI produces clean directional flow from Ductal through the Ngn3
   intermediates to all four mature populations, and a smooth $0\!\to\!1$ latent time (Ductal
@@ -1428,32 +1481,32 @@ with torch.no_grad():
 
   <h3>Chromaffin (t-SNE)</h3>
   <div class="figrow">
-    <img src="assets/qual/chromaffin/velocity_stream_TARVI.png" alt="chromaffin streamlines TARVI">
-    <img src="assets/qual/chromaffin/velocity_stream_VeloVI.png" alt="chromaffin streamlines VeloVI">
-    <img src="assets/qual/chromaffin/velocity_stream_scVelo_dyn.png" alt="chromaffin streamlines scVelo">
-    <img src="assets/qual/chromaffin/velocity_stream_velocyto.png" alt="chromaffin streamlines Velocyto">
+    <img src="assets/qual/chromaffin/velocity_stream_TARVI.png" alt="chromaffin streamlines TARVI" loading="lazy" decoding="async">
+    <img src="assets/qual/chromaffin/velocity_stream_VeloVI.png" alt="chromaffin streamlines VeloVI" loading="lazy" decoding="async">
+    <img src="assets/qual/chromaffin/velocity_stream_scVelo_dyn.png" alt="chromaffin streamlines scVelo" loading="lazy" decoding="async">
+    <img src="assets/qual/chromaffin/velocity_stream_velocyto.png" alt="chromaffin streamlines Velocyto" loading="lazy" decoding="async">
   </div>
   <div class="figrow">
-    <img src="assets/qual/chromaffin/latent_time_TARVI.png" alt="chromaffin latent TARVI">
-    <img src="assets/qual/chromaffin/latent_time_VeloVI.png" alt="chromaffin latent VeloVI">
-    <img src="assets/qual/chromaffin/latent_time_scVelo_dyn.png" alt="chromaffin latent scVelo">
-    <img src="assets/qual/chromaffin/latent_time_velocyto.png" alt="chromaffin latent Velocyto">
+    <img src="assets/qual/chromaffin/latent_time_TARVI.png" alt="chromaffin latent TARVI" loading="lazy" decoding="async">
+    <img src="assets/qual/chromaffin/latent_time_VeloVI.png" alt="chromaffin latent VeloVI" loading="lazy" decoding="async">
+    <img src="assets/qual/chromaffin/latent_time_scVelo_dyn.png" alt="chromaffin latent scVelo" loading="lazy" decoding="async">
+    <img src="assets/qual/chromaffin/latent_time_velocyto.png" alt="chromaffin latent Velocyto" loading="lazy" decoding="async">
   </div>
   <figcaption>Chromaffin: velocity streamlines (top) and latent time (bottom) for TARVI, VeloVI,
   scVelo dynamical, and Velocyto.</figcaption>
 
   <h3>Forebrain (UMAP)</h3>
   <div class="figrow">
-    <img src="assets/qual/forebrain/velocity_stream_TARVI.png" alt="forebrain streamlines TARVI">
-    <img src="assets/qual/forebrain/velocity_stream_VeloVI.png" alt="forebrain streamlines VeloVI">
-    <img src="assets/qual/forebrain/velocity_stream_scVelo_dyn.png" alt="forebrain streamlines scVelo">
-    <img src="assets/qual/forebrain/velocity_stream_velocyto.png" alt="forebrain streamlines Velocyto">
+    <img src="assets/qual/forebrain/velocity_stream_TARVI.png" alt="forebrain streamlines TARVI" loading="lazy" decoding="async">
+    <img src="assets/qual/forebrain/velocity_stream_VeloVI.png" alt="forebrain streamlines VeloVI" loading="lazy" decoding="async">
+    <img src="assets/qual/forebrain/velocity_stream_scVelo_dyn.png" alt="forebrain streamlines scVelo" loading="lazy" decoding="async">
+    <img src="assets/qual/forebrain/velocity_stream_velocyto.png" alt="forebrain streamlines Velocyto" loading="lazy" decoding="async">
   </div>
   <div class="figrow">
-    <img src="assets/qual/forebrain/latent_time_TARVI.png" alt="forebrain latent TARVI">
-    <img src="assets/qual/forebrain/latent_time_VeloVI.png" alt="forebrain latent VeloVI">
-    <img src="assets/qual/forebrain/latent_time_scVelo_dyn.png" alt="forebrain latent scVelo">
-    <img src="assets/qual/forebrain/latent_time_velocyto.png" alt="forebrain latent Velocyto">
+    <img src="assets/qual/forebrain/latent_time_TARVI.png" alt="forebrain latent TARVI" loading="lazy" decoding="async">
+    <img src="assets/qual/forebrain/latent_time_VeloVI.png" alt="forebrain latent VeloVI" loading="lazy" decoding="async">
+    <img src="assets/qual/forebrain/latent_time_scVelo_dyn.png" alt="forebrain latent scVelo" loading="lazy" decoding="async">
+    <img src="assets/qual/forebrain/latent_time_velocyto.png" alt="forebrain latent Velocyto" loading="lazy" decoding="async">
   </div>
   <figcaption>Forebrain: velocity streamlines (top) and latent time (bottom) for TARVI, VeloVI,
   scVelo dynamical, and Velocyto.</figcaption>

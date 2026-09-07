@@ -24,10 +24,13 @@ authors:
   - family-names: Herath
     given-names: Damayanthi
 preferred-citation:
-  type: article
+  type: conference-paper
   title: "TARVI: Transcription-Factor Aided RNA Velocity Inference with Supervised Latent Time and Velocity-Pseudotime Blending"
+  collection-title: "2026 Moratuwa Engineering Research Conference (MERCon)"
   year: 2026
-  notes: "Manuscript under review."
+  publisher:
+    name: "IEEE"
+  notes: "Best Paper Award, Biomedical Engineering and Instrumentation track."
   authors:
     - family-names: Adhikari
       given-names: Chandula

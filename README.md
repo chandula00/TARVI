@@ -6,6 +6,9 @@ extension of VeloVI with cell-specific TF-regulated transcription rates
 consistency loss, and velocity–pseudotime blending for calibrated cell-fate
 trajectories from scRNA-seq.
 
+**🌐 Project page: [chandula00.github.io/TARVI](https://chandula00.github.io/TARVI/)** —
+overview, full method walkthrough, results and figures.
+
 ---
 
 <p align="center">

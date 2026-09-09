@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TARVI — Transcription-Factor Aided RNA Velocity Inference</title>
+<meta name="google-site-verification" content="yVlbTcUfluwURfKQrEDTj5B5TKvdzxez6jVBfdkwj14" />
 <meta name="description" content="TARVI (Transcription-Factor Aided RNA Velocity Inference): a deep generative model for RNA velocity with cell-specific TF-regulated transcription rates (ChEA/ENCODE), a supervised latent-time head, velocity–time consistency losses, and velocity–pseudotime blending. Best Paper Award, MERCon 2026.">
 <meta name="keywords" content="TARVI, RNA velocity, Transcription-Factor Aided RNA Velocity Inference, transcription factor, gene regulatory network, single-cell RNA sequencing, scRNA-seq, variational autoencoder, deep generative model, latent time, pseudotime, cell-fate trajectory, trajectory inference, splicing kinetics, VeloVI, scVelo, velocyto, TFvelo, ChEA, ENCODE, computational biology, bioinformatics, single-cell genomics">
 <meta name="author" content="Chandula Adhikari, Sandeep Dassanayake, Damayanthi Herath">
@@ -17,10 +18,29 @@
 <meta property="og:description" content="A deep generative model for RNA velocity with cell-specific TF-regulated transcription rates, a supervised latent-time head, and velocity–pseudotime blending. Best Paper Award, MERCon 2026.">
 <meta property="og:url" content="https://chandula00.github.io/TARVI/">
 <meta property="og:image" content="https://chandula00.github.io/TARVI/assets/architecture.png">
+<meta property="og:image:width" content="3122">
+<meta property="og:image:height" content="1476">
+<meta property="og:image:alt" content="TARVI architecture: a VeloVI VAE backbone augmented with a TF-regulated transcription rate, a supervised residual time head, and a velocity–pseudotime blend.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="TARVI — Transcription-Factor Aided RNA Velocity Inference">
 <meta name="twitter:description" content="Deep generative RNA velocity with TF-regulated transcription rates, supervised latent time, and velocity–pseudotime blending. Best Paper Award, MERCon 2026.">
 <meta name="twitter:image" content="https://chandula00.github.io/TARVI/assets/architecture.png">
+
+<!-- Google Scholar / Highwire Press citation tags -->
+<meta name="citation_title" content="TARVI: Transcription-Factor Aided RNA Velocity Inference with Supervised Latent Time and Velocity-Pseudotime Blending">
+<meta name="citation_author" content="Adhikari, Chandula">
+<meta name="citation_author_institution" content="Department of Computer Engineering, University of Peradeniya, Sri Lanka">
+<meta name="citation_author" content="Dassanayake, Sandeep">
+<meta name="citation_author_institution" content="Department of Computer Engineering, University of Peradeniya, Sri Lanka">
+<meta name="citation_author" content="Herath, Damayanthi">
+<meta name="citation_author_institution" content="Department of Computer Engineering, University of Peradeniya, Sri Lanka">
+<meta name="citation_conference_title" content="2026 Moratuwa Engineering Research Conference (MERCon)">
+<meta name="citation_publisher" content="IEEE">
+<meta name="citation_publication_date" content="2026/08/13">
+<meta name="citation_language" content="en">
+<meta name="citation_pdf_url" content="https://chandula00.github.io/TARVI/TARVI-MERCon2026.pdf">
+<meta name="citation_abstract_html_url" content="https://chandula00.github.io/TARVI/">
+<meta name="citation_keywords" content="RNA velocity; transcription factor; single-cell RNA sequencing; variational autoencoder; latent time; pseudotime; trajectory inference">
 
 <!-- Structured data -->
 <script type="application/ld+json">
@@ -36,8 +56,16 @@
     { "@type": "Person", "name": "Sandeep Dassanayake", "affiliation": "Department of Computer Engineering, University of Peradeniya" },
     { "@type": "Person", "name": "Damayanthi Herath", "affiliation": "Department of Computer Engineering, University of Peradeniya" }
   ],
-  "datePublished": "2026",
+  "datePublished": "2026-08-13",
   "publisher": { "@type": "Organization", "name": "IEEE" },
+  "inLanguage": "en",
+  "license": "https://opensource.org/licenses/MIT",
+  "mainEntityOfPage": "https://chandula00.github.io/TARVI/",
+  "associatedMedia": {
+    "@type": "MediaObject",
+    "contentUrl": "https://chandula00.github.io/TARVI/TARVI-MERCon2026.pdf",
+    "encodingFormat": "application/pdf"
+  },
   "isPartOf": "2026 Moratuwa Engineering Research Conference (MERCon)",
   "award": "Best Paper Award — Biomedical Engineering and Instrumentation track, MERCon 2026",
   "keywords": "RNA velocity, transcription factor, single-cell RNA sequencing, variational autoencoder, latent time, pseudotime, trajectory inference, TARVI",
@@ -183,7 +211,7 @@ window.MathJax = {
     <div class="affil">Department of Computer Engineering, University of Peradeniya</div>
     <div class="badge-award">🏆 Best Paper Award &middot; MERCon&nbsp;2026 &mdash; Biomedical Engineering &amp; Instrumentation</div>
     <div class="badges">
-      <a class="badge" href="https://github.com/chandula00/TARVI/blob/main/paper/TARVI__Transcription_Factor_Aided_RNA_Velocity_Inference.pdf">📄 Paper (PDF)</a>
+      <a class="badge" href="TARVI-MERCon2026.pdf">📄 Paper (PDF)</a>
       <a class="badge" href="https://github.com/chandula00/TARVI/blob/main/supplementary/supplementary_material.pdf">📑 Supplementary</a>
       <a class="badge" href="https://github.com/chandula00/TARVI/blob/main/notes/TARVI_methodology_notes.pdf">📘 Methodology notes</a>
       <a class="badge" href="https://github.com/chandula00/TARVI">💻 Code</a>
@@ -366,7 +394,7 @@ adata.layers["velocity"]  = model.get_velocity(n_samples=25, smooth=True).values
 adata.obs["latent_time"]  = model.get_latent_time(n_samples=25).mean(axis=1)
 adata.obsm["X_tarvi"]     = model.get_latent_representation()</code></pre>
   <div class="grid">
-    <div class="card"><h4>📄 Paper</h4><p><a href="https://github.com/chandula00/TARVI/blob/main/paper/TARVI__Transcription_Factor_Aided_RNA_Velocity_Inference.pdf">The
+    <div class="card"><h4>📄 Paper</h4><p><a href="TARVI-MERCon2026.pdf">The
       MERCon 2026 manuscript</a> &mdash; 6 pages, the peer-reviewed account.</p></div>
     <div class="card"><h4>📘 Methodology notes</h4><p><a href="https://github.com/chandula00/TARVI/blob/main/notes/TARVI_methodology_notes.pdf">A
       28-page technical companion</a> deriving every equation from first principles.</p></div>
@@ -1573,7 +1601,7 @@ with torch.no_grad():
     <li>Saelens et al. (2019) — A comparison of single-cell trajectory inference methods.</li>
   </ul>
   <p class="eqnote">See the
-  <a href="https://github.com/chandula00/TARVI/blob/main/paper/TARVI__Transcription_Factor_Aided_RNA_Velocity_Inference.pdf">paper</a>
+  <a href="TARVI-MERCon2026.pdf">paper</a>
   for the complete bibliography, and the
   <a href="https://github.com/chandula00/TARVI/blob/main/notes/TARVI_methodology_notes.pdf">methodology
   notes</a> for the full derivations behind Part&nbsp;2.</p>
